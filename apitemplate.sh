@@ -1126,7 +1126,7 @@ echo "Installing frontend dependencies..."
 cd client && npm install || { echo "Error: npm install failed"; exit 1; }
 
 # Replace eslint.config.js to disable prop validation
-cat > client/eslint.config.js <<EOF
+cat > client/eslint.config.js <<ENDCONFIG
 import js from '@eslint/js'
 import globals from 'globals'
 import react from 'eslint-plugin-react'
@@ -1167,7 +1167,7 @@ export default [
     },
   },
 ]
-EOF
+ENDCONFIG
 
 echo "✅ eslint.config.js updated to disable prop validation!"
 
@@ -1178,7 +1178,7 @@ echo "Setup complete!"
 EOF
 
 echo "Creating README file..."
-cat << EOF > README.txt
+cat << READMEEOF > README.txt
 # ${PROJECT_NAME}
 
 ## Overview
@@ -1199,19 +1199,19 @@ ${PROJECT_NAME} is a web application featuring a .NET WebAPI backend and a React
 ## How to Set Up
 1. Clone the repository:
 2. Navigate into the project directory:
-   ```bash
+   \`\`\`bash
    cd ${PROJECT_NAME}
-   ```
+   \`\`\`
 3. Ensure you have .NET installed.
 4. Ensure you have Entity Framework Core installed. If you don't, run:
-   ```bash
+   \`\`\`bash
    dotnet tool install --global dotnet-ef
-   ```
+   \`\`\`
 5. Ensure you have PostgreSQL installed and running. If you haven't already, install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/).
 6. Run the setup script:
-   ```bash
+   \`\`\`bash
    bash initialsetup.sh
-   ```
+   \`\`\`
 7. Follow the prompts to enter the PostgreSQL and admin passwords.
 
 ## What This Script Does
@@ -1221,9 +1221,9 @@ ${PROJECT_NAME} is a web application featuring a .NET WebAPI backend and a React
 - Sets up user-secrets for database connection.
 - Adds an initial Entity Framework migration.
 - Updates the database (creating it if it doesn't already exist).
-- Installs frontend dependencies with `npm install` in the `client` directory.
+- Installs frontend dependencies with \`npm install\` in the \`client\` directory.
 
-EOF
+READMEEOF
 
 echo "README created."
 
