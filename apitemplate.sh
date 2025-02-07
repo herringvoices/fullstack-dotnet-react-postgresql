@@ -843,7 +843,6 @@ cat > src/App.jsx <<EOF
 import { useEffect, useState } from "react";
 import { tryGetLoggedInUser } from "./managers/authManager";
 import { Spinner } from "react-bootstrap";
-import NavBar from "./components/NavBar";
 import ApplicationViews from "./components/ApplicationViews";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
@@ -860,7 +859,7 @@ function App() {
     <Spinner animation="border" role="status" />
   ) : (
     <>
-      <NavBar loggedInUser={loggedInUser} setLoggedInUser={setLoggedInUser} />
+      
       <ApplicationViews loggedInUser={loggedInUser} setLoggedInUser={setLoggedInUser} />
     </>
   );
@@ -917,6 +916,52 @@ EOF
 echo "✅ src/index.css updated!"
 
 rm -f src/app.css
+
+# Replace eslint.config.js to disable prop validation
+cat > eslint.config.js <<EOF
+import js from '@eslint/js'
+import globals from 'globals'
+import react from 'eslint-plugin-react'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+
+export default [
+  { ignores: ['dist'] },
+  {
+    files: ['**/*.{js,jsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    settings: { react: { version: '18.3' } },
+    plugins: {
+      react,
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...react.configs.recommended.rules,
+      ...react.configs['jsx-runtime'].rules,
+      ...reactHooks.configs.recommended.rules,
+      // Disable props validation
+      'react/prop-types': 'off',
+      'react/jsx-no-target-blank': 'off',
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+]
+EOF
+
+echo "✅ eslint.config.js updated to disable prop validation!"
 
 
 # `ApplicationViews.jsx`
@@ -984,12 +1029,13 @@ cat > src/components/NavBar.jsx <<EOF
 import { NavLink } from "react-router-dom";
 import { Button, Navbar, Nav } from "react-bootstrap";
 import { logout } from "../managers/authManager";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function NavBar({ loggedInUser, setLoggedInUser }) {
   return (
     <Navbar bg="light" expand="lg">
       <Navbar.Brand as={NavLink} to="/" className="mx-5">
-        Brand
+        <FontAwesomeIcon icon="fa-solid fa-home" />
       </Navbar.Brand>
       <Nav className="ms-auto mx-5">
         {loggedInUser ? (
@@ -1008,6 +1054,7 @@ export default function NavBar({ loggedInUser, setLoggedInUser }) {
     </Navbar>
   );
 }
+
 
 EOF
 
@@ -1077,14 +1124,58 @@ dotnet ef database update || { echo "Error: Database update failed"; exit 1; }
 # Install frontend dependencies
 echo "Installing frontend dependencies..."
 cd client && npm install || { echo "Error: npm install failed"; exit 1; }
+
+# Replace eslint.config.js to disable prop validation
+cat > client/eslint.config.js <<EOF
+import js from '@eslint/js'
+import globals from 'globals'
+import react from 'eslint-plugin-react'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+
+export default [
+  { ignores: ['dist'] },
+  {
+    files: ['**/*.{js,jsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    settings: { react: { version: '18.3' } },
+    plugins: {
+      react,
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...react.configs.recommended.rules,
+      ...react.configs['jsx-runtime'].rules,
+      ...reactHooks.configs.recommended.rules,
+      // Disable props validation
+      'react/prop-types': 'off',
+      'react/jsx-no-target-blank': 'off',
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+]
+EOF
+
+echo "✅ eslint.config.js updated to disable prop validation!"
+
 cd ..
 
 # Final message
 echo "Setup complete!"
 EOF
-
-# Make the new script executable
-chmod +x initialsetup.sh
 
 echo "Creating README file..."
 cat << EOF > README.txt
@@ -1119,7 +1210,7 @@ ${PROJECT_NAME} is a web application featuring a .NET WebAPI backend and a React
 5. Ensure you have PostgreSQL installed and running. If you haven't already, install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/).
 6. Run the setup script:
    ```bash
-   ./initialsetup.sh
+   bash initialsetup.sh
    ```
 7. Follow the prompts to enter the PostgreSQL and admin passwords.
 
