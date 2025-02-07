@@ -1,9 +1,3 @@
-Below is an example **README** that describes **your Bash script itself** (rather than the project it generates). This is the “meta” readme that explains what the script does, how to run it, and what prerequisites folks need in order to use it successfully.
-
-Feel free to tweak the wording or formatting to your taste:
-
----
-
 # Fullstack .NET + React + PostgreSQL Starter Script
 
 **Table of Contents**
