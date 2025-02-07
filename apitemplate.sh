@@ -872,7 +872,7 @@ EOF
 echo "✅ src/App.jsx updated!"
 
 #  `index.css`
-cat > src/App.jsx <<EOF
+cat > src/index.css <<EOF
 /* Import the google web fonts you want to use */
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300&family=Quicksand&family=Roboto:wght@100&display=swap");
 
