@@ -846,7 +846,9 @@ import { Spinner } from "react-bootstrap";
 import ApplicationViews from "./components/ApplicationViews";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
-library.add(fas);
+import { far } from "@fortawesome/free-regular-svg-icons";
+import { fab } from "@fortawesome/free-brands-svg-icons";
+library.add(fas, far, fab);
 
 function App() {
   const [loggedInUser, setLoggedInUser] = useState();
@@ -1019,6 +1021,7 @@ export default function ApplicationViews({ loggedInUser, setLoggedInUser }) {
       {/* CATCH-ALL ROUTE */}
       <Route path="*" element={<p>Whoops, nothing here...</p>} />
     </Routes>
+
   );
 }
 
