@@ -478,7 +478,6 @@ public class AuthController : ControllerBase
 
 # Write AuthController.cs file
 echo "$authControllerCs" > "./Controllers/AuthController.cs"
-
 echo "AuthController created successfully!"
 
 # Ensure user secrets are initialized
@@ -492,15 +491,23 @@ read -s userPassword
 # Set the database connection string as a user secret
 dotnet user-secrets set ${directoryName}DbConnectionString 'Host=localhost;Port=5432;Username=postgres;Password='"$userPassword"';Database='"$directoryName"''
 
+# Clear stored password from memory
+unset userPassword
+
 clear
 # Ask the user for the default admin password
 echo "🔑 Enter the password for the default admin account: ✏️"
 read -s adminPassword
-clear
+
 # Set the admin password as a user secret
 dotnet user-secrets set AdminPassword "${adminPassword}"
 
+# Clear stored password from memory
+unset adminPassword
+
+clear
 echo "User secrets configured successfully!"
+
 
 # Create client directory
 mkdir -p client
@@ -834,11 +841,13 @@ echo "✅ src/main.jsx updated!"
 # Fix `App.jsx`
 cat > src/App.jsx <<EOF
 import { useEffect, useState } from "react";
-import "./App.css";
 import { tryGetLoggedInUser } from "./managers/authManager";
 import { Spinner } from "react-bootstrap";
 import NavBar from "./components/NavBar";
 import ApplicationViews from "./components/ApplicationViews";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+library.add(fas);
 
 function App() {
   const [loggedInUser, setLoggedInUser] = useState();
@@ -862,17 +871,81 @@ EOF
 
 echo "✅ src/App.jsx updated!"
 
-# Fix `ApplicationViews.jsx`
+#  `index.css`
+cat > src/App.jsx <<EOF
+/* Import the google web fonts you want to use */
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300&family=Quicksand&family=Roboto:wght@100&display=swap");
+
+/* FONTS
+font-family: "Nunito", sans-serif;
+font-family: "Quicksand", sans-serif;
+font-family: "Roboto", sans-serif; 
+*/
+
+/* COLOR PALETTE Feel Free to change*/
+:root {
+  --darkest: #000000;
+  --less-dark: #444444;
+  --accent: #ffa600;
+  --lightest: #ffffff;
+  --less-light: #cccccc;
+}
+
+/* GLOBAL STYLES */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: "Nunito", sans-serif;
+}
+
+body {
+  background-color: var(--appBackground);
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Roboto", serif;
+}
+EOF
+echo "✅ src/index.css updated!"
+
+rm -f src/app.css
+
+
+# `ApplicationViews.jsx`
 cat > src/components/ApplicationViews.jsx <<EOF
-import { Route, Routes } from "react-router-dom";
+import { Outlet, Route, Routes } from "react-router-dom";
 import { AuthorizedRoute } from "./auth/AuthorizedRoute";
 import Login from "./auth/Login";
 import Register from "./auth/Register";
+import NavBar from "./NavBar";
 
 export default function ApplicationViews({ loggedInUser, setLoggedInUser }) {
   return (
     <Routes>
-      <Route path="/">
+      {/* PARENT ROUTE */}
+      <Route
+        path="/"
+        // This element is your "layout" that wraps children in an <Outlet />
+        element={
+          <>
+            {/* If you have a NavBar, put it here */}
+            {/* <NavBar loggedInUser={loggedInUser} setLoggedInUser={setLoggedInUser} /> */}
+
+            {/* All nested routes will appear here */}
+            <Outlet />
+          </>
+        }
+      >
+        {/* CHILD ROUTES */}
+        {/* Home (index) route */}
         <Route
           index
           element={
@@ -881,13 +954,26 @@ export default function ApplicationViews({ loggedInUser, setLoggedInUser }) {
             </AuthorizedRoute>
           }
         />
-        <Route path="login" element={<Login setLoggedInUser={setLoggedInUser} />} />
-        <Route path="register" element={<Register setLoggedInUser={setLoggedInUser} />} />
+
+        {/* /login route */}
+        <Route
+          path="login"
+          element={<Login setLoggedInUser={setLoggedInUser} />}
+        />
+
+        {/* /register route */}
+        <Route
+          path="register"
+          element={<Register setLoggedInUser={setLoggedInUser} />}
+        />
       </Route>
+
+      {/* CATCH-ALL ROUTE */}
       <Route path="*" element={<p>Whoops, nothing here...</p>} />
     </Routes>
   );
 }
+
 EOF
 
 echo "✅ src/components/ApplicationViews.jsx created!"
@@ -901,7 +987,7 @@ import { logout } from "../managers/authManager";
 
 export default function NavBar({ loggedInUser, setLoggedInUser }) {
   return (
-    <Navbar bg="light" expand="lg" fixed="top">
+    <Navbar bg="light" expand="lg">
       <Navbar.Brand as={NavLink} to="/" className="mx-5">
         Brand
       </Navbar.Brand>
@@ -935,5 +1021,119 @@ dotnet ef migrations add InitialCreate
 dotnet ef database update
 
 echo "✅ Migrations and database update complete!"
+
+
+# This script writes initialsetup.sh and creates a README explaining how to run it.
+
+echo "Creating initialsetup.sh..."
+
+# Get the current directory name
+PROJECT_NAME=$(basename "$PWD")
+
+cat << EOF > initialsetup.sh
+#!/bin/bash
+
+# Restore .NET dependencies
+echo "Restoring .NET dependencies..."
+dotnet restore || { echo "Error: dotnet restore failed"; exit 1; }
+
+# Initialize user-secrets
+echo "Initializing user-secrets..."
+dotnet user-secrets init || { echo "Error: user-secrets initialization failed"; exit 1; }
+
+# Clear screen before prompting for passwords
+clear
+
+# Prompt for the database password securely
+echo "🔑 Enter your PostgreSQL password: ✏️"
+read -s db_password
+clear
+
+# Prompt for the admin password securely
+echo "🔑 Enter your admin password: ✏️"
+read -s admin_password
+clear
+
+# Set user-secrets for database connection string
+echo "Setting database connection string..."
+dotnet user-secrets set \${PROJECT_NAME}DbConnectionString "Host=localhost;Port=5432;Username=postgres;Password=\$db_password;Database=\${PROJECT_NAME}" || { echo "Error: Failed to set database connection string"; exit 1; }
+
+# Set user-secrets for admin password
+echo "Setting admin password..."
+dotnet user-secrets set AdminPassword "\$admin_password" || { echo "Error: Failed to set admin password"; exit 1; }
+
+# Clear stored password variables
+unset db_password
+unset admin_password
+
+# Add initial migration
+echo "Adding initial migration..."
+dotnet ef migrations add InitialCreate || { echo "Error: Failed to add migration"; exit 1; }
+
+# Update database
+echo "Updating database..."
+dotnet ef database update || { echo "Error: Database update failed"; exit 1; }
+
+# Install frontend dependencies
+echo "Installing frontend dependencies..."
+cd client && npm install || { echo "Error: npm install failed"; exit 1; }
+cd ..
+
+# Final message
+echo "Setup complete!"
+EOF
+
+# Make the new script executable
+chmod +x initialsetup.sh
+
+echo "Creating README file..."
+cat << EOF > README.txt
+# ${PROJECT_NAME}
+
+## Overview
+${PROJECT_NAME} is a web application featuring a .NET WebAPI backend and a React frontend. It includes authentication, PostgreSQL integration, and Bootstrap styling.
+
+### Features
+🔧 .NET WebAPI with authentication and PostgreSQL integration.
+⚛️ React frontend with Bootstrap and routing.
+🚀 One-command setup via a Bash script.
+🔄 Entity Framework migrations included.
+🔒 User authentication with ASP.NET Identity.
+
+### Tech Stack
+- **Backend**: .NET 8, ASP.NET Core WebAPI, EF Core, PostgreSQL
+- **Frontend**: React, React-Bootstrap, Vite, React Router
+- **Authentication**: ASP.NET Identity with cookie-based auth
+
+## How to Set Up
+1. Clone the repository:
+2. Navigate into the project directory:
+   ```bash
+   cd ${PROJECT_NAME}
+   ```
+3. Ensure you have .NET installed.
+4. Ensure you have Entity Framework Core installed. If you don't, run:
+   ```bash
+   dotnet tool install --global dotnet-ef
+   ```
+5. Ensure you have PostgreSQL installed and running. If you haven't already, install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/).
+6. Run the setup script:
+   ```bash
+   ./initialsetup.sh
+   ```
+7. Follow the prompts to enter the PostgreSQL and admin passwords.
+
+## What This Script Does
+- Restores .NET dependencies.
+- Initializes user-secrets.
+- Prompts for database and admin passwords securely.
+- Sets up user-secrets for database connection.
+- Adds an initial Entity Framework migration.
+- Updates the database (creating it if it doesn't already exist).
+- Installs frontend dependencies with `npm install` in the `client` directory.
+
+EOF
+
+echo "README created."
 
 
